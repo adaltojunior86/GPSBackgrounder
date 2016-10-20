@@ -13,7 +13,7 @@ import Foundation
 
 @available(iOS 8.0, *)
 @objc(HWPGPSBackgrounder) class CDVGPSBackgrounder : CDVPlugin, CLLocationManagerDelegate {
-    
+
     var com : CDVInvokedUrlCommand!
 
     lazy var locationManager: CLLocationManager! = {
@@ -21,43 +21,50 @@ import Foundation
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.delegate = self
         manager.requestAlwaysAuthorization()
+        manager.pausesLocationUpdatesAutomatically = false;
+
+        if #available(iOS 9, *) {
+            manager.allowsBackgroundLocationUpdates = true;
+        }
+
         return manager
-        }()
-    
-    
-    func initialize(command: CDVInvokedUrlCommand) {
-        
+    }()
+
+    func initialize(_ command: CDVInvokedUrlCommand) {
+
         com = command
-        
+
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
-        commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId)
+        commandDelegate!.send(pluginResult, callbackId: command.callbackId)
 
     }
-    
-    func start(command: CDVInvokedUrlCommand) {
+
+    func start(_ command: CDVInvokedUrlCommand) {
 
         locationManager.startUpdatingLocation()
 
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
-        commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId)
+        commandDelegate!.send(pluginResult, callbackId: command.callbackId)
 
     }
-    
-    func stop(command: CDVInvokedUrlCommand) {
+
+    func stop(_ command: CDVInvokedUrlCommand) {
 
         locationManager.stopUpdatingLocation()
         let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK)
-        commandDelegate!.sendPluginResult(pluginResult, callbackId: command.callbackId)
+        commandDelegate!.send(pluginResult, callbackId: command.callbackId)
 
     }
     
-    func locationManager(manager: CLLocationManager, didUpdateToLocation newLocation: CLLocation!, fromLocation oldLocation: CLLocation) {
-
-        let coordinate : CLLocationCoordinate2D = newLocation.coordinate
-
-        let script = "GPSBackgrounder.onPosition({latitude:\(coordinate.latitude), longitude: \(coordinate.longitude), speed: \(newLocation.speed), timestamp: '\(newLocation.timestamp)', accuracy: \(newLocation.horizontalAccuracy)})";
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         
-        webView!.stringByEvaluatingJavaScriptFromString(script)
+        let coordinate = locations.last! as CLLocation
+        print(coordinate)
+        
+        let script = "GPSBackgrounder.onPosition({latitude:\(coordinate.coordinate.latitude), longitude: \(coordinate.coordinate.longitude), speed: \(coordinate.speed), timestamp: '\(coordinate.timestamp)', accuracy: \(coordinate.horizontalAccuracy)})";
+        print(script)
+
+        webView!.stringByEvaluatingJavaScript(from: script)
         
     }
 
